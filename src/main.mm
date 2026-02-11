@@ -27,7 +27,7 @@ NSColor* colorMine = [NSColor colorWithRed:0.f green:0.f blue:0.f alpha:1.0f];
     self = [super initWithFrame:frameRect];
     if (self) {
         [self setWantsLayer:YES];
-        self.elapsedTime = 0;
+        self.elapsedTime = 0.0;
         [self restartTimer];
     }
     return self;
@@ -40,15 +40,16 @@ NSColor* colorMine = [NSColor colorWithRed:0.f green:0.f blue:0.f alpha:1.0f];
 
 - (void)pauseTimer {
     if (self.gameTimer) [self.gameTimer invalidate];
+    self.gameTimer = nil;
     self.pausedTime = [NSDate timeIntervalSinceReferenceDate];
 }
 
 - (void)resumeTimer {
     if (self.elapsedTime <= 0.0) self.startTime = [NSDate timeIntervalSinceReferenceDate];
-    else self.startTime += [NSDate timeIntervalSinceReferenceDate] - self.pausedTime;
+    else if (self.pausedTime > self.startTime) self.startTime += [NSDate timeIntervalSinceReferenceDate] - self.pausedTime;
 
     if (!self.gameTimer) {
-        self.gameTimer = [NSTimer scheduledTimerWithTimeInterval:0.1
+        self.gameTimer = [NSTimer scheduledTimerWithTimeInterval:0.01
                           target:self
                           selector:@selector(updateTimer:)
                           userInfo:nil
@@ -69,7 +70,8 @@ NSColor* colorMine = [NSColor colorWithRed:0.f green:0.f blue:0.f alpha:1.0f];
 
 - (void)resetTimer {
     self.startTime = [NSDate timeIntervalSinceReferenceDate];
-    self.elapsedTime = 0;
+    self.pausedTime = 0.0;
+    self.elapsedTime = 0.0;
 }
 
 - (BOOL)acceptsFirstResponder {
