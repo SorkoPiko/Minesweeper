@@ -19,6 +19,7 @@ NSColor* colorMine = [NSColor colorWithRed:0.f green:0.f blue:0.f alpha:1.0f];
 @property (strong, nonatomic) NSTimer* gameTimer;
 @property (assign, nonatomic) NSTimeInterval startTime;
 @property (assign, nonatomic) NSTimeInterval elapsedTime;
+@property (assign, nonatomic) NSTimeInterval pausedTime;
 @end
 
 @implementation DrawView
@@ -27,19 +28,32 @@ NSColor* colorMine = [NSColor colorWithRed:0.f green:0.f blue:0.f alpha:1.0f];
     if (self) {
         [self setWantsLayer:YES];
         self.elapsedTime = 0;
-        [self startTimer];
+        [self restartTimer];
     }
     return self;
 }
 
-- (void)startTimer {
+- (void)restartTimer {
     [self stopTimer];
     [self resetTimer];
-    self.gameTimer = [NSTimer scheduledTimerWithTimeInterval:0.1
-                      target:self
-                      selector:@selector(updateTimer:)
-                      userInfo:nil
-                      repeats:YES];
+}
+
+- (void)pauseTimer {
+    if (self.gameTimer) [self.gameTimer invalidate];
+    self.pausedTime = [NSDate timeIntervalSinceReferenceDate];
+}
+
+- (void)resumeTimer {
+    if (self.elapsedTime <= 0.0) self.startTime = [NSDate timeIntervalSinceReferenceDate];
+    else self.startTime += [NSDate timeIntervalSinceReferenceDate] - self.pausedTime;
+
+    if (!self.gameTimer) {
+        self.gameTimer = [NSTimer scheduledTimerWithTimeInterval:0.1
+                          target:self
+                          selector:@selector(updateTimer:)
+                          userInfo:nil
+                          repeats:YES];
+    }
 
 }
 
@@ -71,7 +85,7 @@ NSColor* colorMine = [NSColor colorWithRed:0.f green:0.f blue:0.f alpha:1.0f];
             case 'r':
             case 'R':
                 game = MinesweeperGame(columns, rows, mines);
-                [self startTimer];
+                [self restartTimer];
                 break;
         }
 
@@ -88,6 +102,7 @@ NSColor* colorMine = [NSColor colorWithRed:0.f green:0.f blue:0.f alpha:1.0f];
 
     NSPoint locationInWindow = [event locationInWindow];
     NSPoint releasePosition = [self convertPoint:locationInWindow fromView:nil];
+    [self resumeTimer];
 
     GameState state = game.reveal((int)(releasePosition.x / cellSize), (int)(releasePosition.y / cellSize));
     if (state == GameState::Lost || state == GameState::Won) {
@@ -102,6 +117,7 @@ NSColor* colorMine = [NSColor colorWithRed:0.f green:0.f blue:0.f alpha:1.0f];
 
     NSPoint locationInWindow = [event locationInWindow];
     NSPoint releasePosition = [self convertPoint:locationInWindow fromView:nil];
+    [self resumeTimer];
 
     game.toggleFlag((int)(releasePosition.x / cellSize), (int)(releasePosition.y / cellSize));
     [self setNeedsDisplay:YES];

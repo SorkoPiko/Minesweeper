@@ -118,6 +118,7 @@ GameState MinesweeperGame::reveal(size_t x, size_t y) {
 }
 
 void MinesweeperGame::toggleFlag(size_t x, size_t y) {
+    if (!generated) return;
     if (revealed[y][x]) return;
     flagged[y][x] = !flagged[y][x];
     if (flagged[y][x]) minesLeft--;
