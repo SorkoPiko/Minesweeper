@@ -89,6 +89,9 @@ NSColor* colorMine = [NSColor colorWithRed:0.f green:0.f blue:0.f alpha:1.0f];
                 game = MinesweeperGame(columns, rows, mines);
                 [self restartTimer];
                 break;
+            case 'c':
+            case 'C':
+                game.solve();
         }
 
         [self setNeedsDisplay:YES];
