@@ -177,7 +177,7 @@ void MinesweeperGame::solve() {
 
     bool progress = true;
 
-    constexpr size_t MAX_ITERATIONS = 10;
+    constexpr size_t MAX_ITERATIONS = 0;
     size_t iterations = 0;
     while (progress && gameState == GameState::Ongoing) {
         progress = false;
@@ -239,24 +239,26 @@ void MinesweeperGame::solve() {
                                 std::pair<int, std::vector<Pos>> cellRequirements = mineRequirements[key];
                                 if (cellRequirements.second.empty()) continue;
 
-                                bool isSubset = std::ranges::all_of(cellRequirements.second, [&](const Pos& reqPos) {
-                                    return std::ranges::find(current, reqPos) != current.end();
+                                size_t subsetOutside = std::ranges::count_if(cellRequirements.second, [&](const Pos& reqPos) {
+                                    return std::ranges::find(current, reqPos) == current.end();
                                 });
 
-                                if (isSubset) applicableSubsets.push_back(cellRequirements);
+                                if (subsetOutside < cellRequirements.first) applicableSubsets.push_back(cellRequirements);
                             }
                         }
 
                         if (!applicableSubsets.empty()) {
                             madeProgress = true;
                             for (const auto& subset : applicableSubsets) {
-                                actualAdjacent -= subset.first;
-                                currentAdjacent -= static_cast<int>(subset.second.size());
+                                int subsetOutside = static_cast<int>(std::ranges::count_if(subset.second, [&](const Pos& reqPos) {
+                                    return std::ranges::find(current, reqPos) == current.end();
+                                }));
+
+                                actualAdjacent -= subset.first - subsetOutside;
+                                currentAdjacent -= static_cast<int>(subset.second.size()) - subsetOutside;
                                 for (const Pos &reqPos: subset.second) {
                                     auto it = std::ranges::find(current, reqPos);
-                                    if (it != current.end()) {
-                                        current.erase(it);
-                                    }
+                                    if (it != current.end()) current.erase(it);
                                 }
                             }
                         }
@@ -285,7 +287,7 @@ void MinesweeperGame::solve() {
                 }
             }
         }
-        if (!progress && iterations++ >= MAX_ITERATIONS) {
+        if (!progress && iterations++ <= MAX_ITERATIONS) {
             progress = true;
         }
     }
